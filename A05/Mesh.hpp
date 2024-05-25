@@ -54,23 +54,35 @@ void MakeCube(float size, std::vector<glm::vec3> &vertices, std::vector<uint32_t
     };
                     
  indices = {
-        0,1,2,
-        0,2,3,
-        
-        2,6,1,
-        1,6,5,
-        
-        4,6,7,
-        4,5,6,
-        
-        1,0,4,
-        1,4,5,
-        
-        0,3,7,
-        4,0,7,
-        
-        2,3,6,
-        3,7,6
+        0,1,2, 
+        0,2,3, 
+        0,2,1, 
+        0,3,2, 
+         
+        2,6,1, 
+        1,6,5, 
+        2,1,6, 
+        1,5,6, 
+         
+        4,6,7, 
+        4,5,6, 
+        4,7,6, 
+        4,6,5, 
+         
+        1,0,4, 
+        1,4,5, 
+        1,4,0, 
+        1,5,4, 
+         
+        0,3,7, 
+        4,0,7, 
+        0,7,3, 
+        4,7,0, 
+         
+        2,3,6, 
+        3,7,6, 
+        2,6,3, 
+        3,6,7 
      };
 
      /*
@@ -210,16 +222,18 @@ void MakeSphere(float radius, int rings, int slices, std::vector<glm::vec3> &ver
 vertices.resize(120*slices);
 indices.resize(120*slices);
  
+// TODO:finire la sfera
 
 
 for(int j = 0; j < rings; j++){
     float ang_ring = M_PI * (float)j / (float)rings;
     //float ang_ring = M_PI / (float)rings;
     vertices[(j+1)*slices+j] = {0.0f,sin(ang_ring),0.0f};
+
     for(int i = 0; i < slices; i++) {
         float ang_slice = 2*M_PI * (float)i / (float)slices;
         //printf("ang_ring j=%d: %f, sin %f\n", j, ang_ring, sin(ang_ring));
-        vertices[i+(j*slices)+j] = glm::vec3((radius*cos(ang_ring)) * sin(ang_slice), sin(ang_ring), (radius*cos(ang_ring)) * cos(ang_slice));
+        vertices[i+(j*slices)+j] = glm::vec3((radius*cos(ang_ring)) * sin(ang_slice), radius * sin(ang_ring), (radius*cos(ang_ring)) * cos(ang_slice));
         if(slices == 32){
             // printf("%d, %d: %f, %f, %f\n ",i+(j*slices)+j, (j+1)*slices+j, (radius*cos(ang_ring)) * sin(ang_slice), sin(ang_ring), (radius*cos(ang_ring)) * cos(ang_slice) );
 
@@ -237,10 +251,8 @@ for(int j = 0; j < rings; j++){
                 indices[3*(i+j) ],
                 indices[3*(i+j)+1],
                 indices[3*(i+j)+2]);
-
         }
     } 
-  
 }
 
 }
