@@ -39,35 +39,10 @@ Paramters:
 	Md	- Diffuse color
 	Ms	- Specular color
 */
-	// vec3 Diffuse = Md * clamp(dot(N, L),0.0,1.0);
-	// vec3 Specular = Ms * vec3(pow(clamp(dot(V, -reflect(L, N)),0.0,1.0), 200.0f));
 
-	// Cosine of the angle between the normal vector and the light vector
-    float cos_alpha = dot(N, L);
-
-	 
-
-	vec3 Diffuse = vec3(0.0f);
-	if (cos_alpha > 0.0f && cos_alpha <= 0.1f) {
-		//smoothstep performs smooth Hermite interpolation
-		Diffuse = Md * smoothstep(0.0, 0.1, cos_alpha) * 0.15;
-	} else if (cos_alpha > 0.1f && cos_alpha <= 0.7f) {
-		Diffuse = Md * 0.15f;
-	} else if (cos_alpha > 0.7f && cos_alpha <= 0.8f) {
-		Diffuse = Md * 0.15 + smoothstep(0.7, 0.8, cos_alpha) * 0.85;
-	} else if (cos_alpha > 0.8f) {
-		Diffuse = Md;
-	}
-
-	// Cosine of the angle between the viewer direction and the reflection of the light vector around the normal 
-    float cos_beta = dot(V, -reflect(L, N));
-
-	vec3 Specular = vec3(0.0f);
-	if (cos_beta > 0.9f && cos_beta <= 0.95f) {
-		Specular = Ms * smoothstep(0.9, 0.95, cos_beta);
-	} else if (cos_beta > 0.95f) {
-		Specular = Ms;
-	}
+	vec3 Diffuse = Md * clamp(dot(N, L),0.0,1.0);
+	vec3 Specular = Ms * vec3(pow(clamp(dot(V, -reflect(L, N)),0.0,1.0), 200.0f)); 
+	
 	return (Diffuse + Specular);
 }
 
