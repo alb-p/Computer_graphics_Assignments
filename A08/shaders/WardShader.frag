@@ -17,6 +17,9 @@ layout(binding = 2) uniform GlobalUniformBufferObject {
 	vec3 eyePos;
 } gubo;
 
+#define PI 3.141592653589793
+
+
 vec3 BRDF(vec3 V, vec3 N, vec3 L, vec3 T, vec3 B, vec3 Md, vec3 Ms, float alphaT, float alphaB) {
 /* This BRDF should perform the Ward anisotropic specular model with the Lambert diffuse model.
 		 
@@ -33,24 +36,52 @@ Paramters:
 */
 
 	vec3 Diffuse = Md * clamp(dot(N, L),0.0,1.0);
-	//generate the Specular Ward formula
-	vec3 H = normalize(T + B);
-	float alphaTSquared = alphaT * alphaT;
-	float alphaBSquared = alphaB * alphaB;
-	float NdotH = dot(N, H);
-	float NdotV = dot(N, V);
-	float NdotL = dot(N, L);
-	float TdotH = dot(T, H);
-	float BdotH = dot(B, H);
-	float G1 = exp(-(TdotH * TdotH) / (alphaTSquared * (NdotT * NdotT))) / (4.0 * alphaTSquared * NdotT * NdotT);
-	float G2 = exp(-(BdotH * BdotH) / (alphaBSquared * (NdotB * NdotB))) / (4.0 * alphaBSquared * NdotB * NdotB);
-	float D = exp(-(1.0 - NdotH * NdotH) / (alphaTSquared * NdotH * NdotH)) / (4.0 * alphaTSquared * NdotH * NdotH);
-	vec3 Specular = (G1 * G2 * D) / (4.0 * NdotV * NdotL);
+
 	
-	vec3 h = normalize(L+V);
+	//generate the Specular Ward formula
+	//vec3 H = normalize(T + B);
+	//float alphaTSquared = alphaT * alphaT;
+	//float alphaBSquared = alphaB * alphaB;
+	//float G1 = exp(-(TdotH * TdotH) / (alphaTSquared * (NdotT * NdotT))) / (4.0 * alphaTSquared * NdotT * NdotT);
+	//float G2 = exp(-(BdotH * BdotH) / (alphaBSquared * (NdotB * NdotB))) / (4.0 * alphaBSquared * NdotB * NdotB);
+	//float D = exp(-(1.0 - NdotH * NdotH) / (alphaTSquared * NdotH * NdotH)) / (4.0 * alphaTSquared * NdotH * NdotH);
+	//vec3 Specular = (G1 * G2 * D) / (4.0 * NdotV * NdotL);
+
+
+	vec3 H = normalize(L+V);
+	float NdotL = clamp(dot(N, L),0.0,0.1);
+
+	float NdotV = clamp(dot(N, V), 0.0, 1.0);
+	float NdotH = clamp(dot(N, H), 0.0, 1.0);
+	float HdotT = clamp(dot(H, T), 0.0, 1.0);
+	float HdotB = clamp(dot(H, B), 0.0, 1.0);
+
+ 	// Compute the exponent of the specular term
+    float exponent = (pow(HdotT / alphaT, 2.0) + pow(HdotB / alphaB, 2.0)) / (NdotH * NdotH);
+
+	// Compute the normalization factor
+	float normalization = 1.0 / (4.0 * PI * alphaT * alphaB * sqrt(NdotV/NdotL));
+
+
+	//float coeff = sqrt(NdotL/NdotV) / (4.0 * pi * alphaT * alphaB); 
+	//float theta = (pow(HdotT/alphaT, 2.0) + pow(BdotH/alphaB, 2.0)) / (1.0 + NdotH);
+	
+	
+	vec3 Specular = Ms * normalization * exp(-exponent);
+
+
+
+
+
+	//vec3 Specular = Ms * coeff * exp(-theta) / (NdotH * sqrt(NdotV * NdotL));
+	
+
+
 	//vec3 Specular = Ms * ( (exp(-((pow(dot(h,T)/aT,2))+(pow((dot(h,B)/aB),2))))) / ((pow(dot(h,N),2.0))/(4*pi*aT*aB*pow((dot(V,N)/dot(L,N)),0.5f))) )
 
 	//vec3 Specular = Ms * vec3(pow(clamp(dot(V, -reflect(L, N)),0.0,1.0), 200.0f));
+	
+	
 	return (Diffuse + Specular);
 }
 

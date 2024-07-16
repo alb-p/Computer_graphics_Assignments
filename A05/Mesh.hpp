@@ -219,40 +219,44 @@ void MakeSphere(float radius, int rings, int slices, std::vector<glm::vec3> &ver
 // HINT: the procedure below creates a circle. You have to change it, or you will obtain a wrong result
 // You should use two nested for loops, one used to span across the rings, and the other that spans along
 // the rings.
-vertices.resize(120*slices);
-indices.resize(120*slices);
- 
-// TODO:finire la sfera
+  // Resize the vertices and indices vectors to accommodate the sphere's data
+    vertices.clear();
+    indices.clear();
+    
+    // Loop through the rings
+    for (int j = 0; j <= rings; ++j) {
+        float theta = j * M_PI / rings; // Angle for the ring
+        float sinTheta = sin(theta);
+        float cosTheta = cos(theta);
+        
+        // Loop through the slices
+        for (int i = 0; i <= slices; ++i) {
+            float phi = i * 2 * M_PI / slices; // Angle for the slice
+            float sinPhi = sin(phi);
+            float cosPhi = cos(phi);
 
+            glm::vec3 vertex;
+            vertex.x = radius * cosPhi * sinTheta;
+            vertex.y = radius * cosTheta;
+            vertex.z = radius * sinPhi * sinTheta;
 
-for(int j = 0; j < rings; j++){
-    float ang_ring = M_PI * (float)j / (float)rings;
-    //float ang_ring = M_PI / (float)rings;
-    vertices[(j+1)*slices+j] = {0.0f,sin(ang_ring),0.0f};
-
-    for(int i = 0; i < slices; i++) {
-        float ang_slice = 2*M_PI * (float)i / (float)slices;
-        //printf("ang_ring j=%d: %f, sin %f\n", j, ang_ring, sin(ang_ring));
-        vertices[i+(j*slices)+j] = glm::vec3((radius*cos(ang_ring)) * sin(ang_slice), radius * sin(ang_ring), (radius*cos(ang_ring)) * cos(ang_slice));
-        if(slices == 32){
-            // printf("%d, %d: %f, %f, %f\n ",i+(j*slices)+j, (j+1)*slices+j, (radius*cos(ang_ring)) * sin(ang_slice), sin(ang_ring), (radius*cos(ang_ring)) * cos(ang_slice) );
-
+            vertices.push_back(vertex);
         }
-        // printf("%d, %d\n ",i+(j*slices)+j, (j+1)*slices+j );
-        indices[3*(i+j)  ] = (j+1)*slices+j; // 32 -> 65 -> 98
-        indices[3*(i+j)+1] = i+(j)*slices+j;
-        indices[3*(i+j)+2] = (i+(j)*slices+1+j) % ((j+1)*slices+j);
-        if(i == slices-1){
-            // it is i+(j)*slices+j w/ i = 0
-            indices[3*(i+j)+2] = (j)*slices+j;
-        }
-        if(slices == 32){
-            printf("%d,%d, %d \n ",
-                indices[3*(i+j) ],
-                indices[3*(i+j)+1],
-                indices[3*(i+j)+2]);
-        }
-    } 
-}
+    }
 
+    // Generate the indices
+    for (int j = 0; j < rings; ++j) {
+        for (int i = 0; i < slices; ++i) {
+            int first = (j * (slices + 1)) + i;
+            int second = first + slices + 1;
+
+            indices.push_back(first);
+            indices.push_back(second);
+            indices.push_back(first + 1);
+
+            indices.push_back(second);
+            indices.push_back(second + 1);
+            indices.push_back(first + 1);
+        }
+    }
 }
