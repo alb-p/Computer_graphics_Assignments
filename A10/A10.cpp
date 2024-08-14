@@ -37,9 +37,9 @@ struct skyBoxUniformBufferObject {
 
 // **A10** Place here the CPP struct for the uniform buffer for the matrices
 struct MatrixUniformBufferObject {
-    glm::mat4 mvpMat;
-    glm::mat4 mMat;
-    glm::mat4 nMat;
+    alignas(16) glm::mat4 mvpMat;
+    alignas(16) glm::mat4 mMat;
+    alignas(16) glm::mat4 nMat;
 };
 
 // **A10** Place here the CPP struct for the uniform buffer for the parameters
@@ -128,6 +128,7 @@ class A10 : public BaseProject {
 	DescriptorSet DSskyBox;
 
 // **A10** Place here the variables for the Model, the five texture (diffuse, specular, normal map, emission and clouds) and the Descrptor Set
+	// Model<Vertex> MEarth;
 	Model MEarth;
 	Texture Diffuse, Specular, NormalMap, Emission, Clouds;
 	DescriptorSet DSEarth;
@@ -181,27 +182,16 @@ class A10 : public BaseProject {
 					{2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1}
 				  });
 // **A10** Place here the initialization of the the DescriptorSetLayout
-
-	// DSLNew.init(this, {
-	// 	{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, sizeof(MatrixUniformBufferObject), 1},
-	// 	{1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1},
-	// 	{2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(MatrixUniformBufferObject), 1}
-
-	// });
-
-	std::vector<DescriptorSetLayoutBinding> bindings = {
-            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, sizeof(MatrixUniformBufferObject),1},
-            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1},
-            {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1},
-            {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1},
-            {4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1},
-            {5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1},
-            {6, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(MatrixUniformBufferObject), 4}
-        };
-        
-    DSLNew.init(this,bindings);
-
-
+	
+	DSLNew.init(this, {
+                    {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, sizeof(MatrixUniformBufferObject), 1},
+                    {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1},
+                    {2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1},
+                    {3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 2, 1},
+                    {4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 3, 1},
+                    {5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4, 1},
+                    {6, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(ParametersUniformBufferObject), 1}
+	});
 
 		// Vertex descriptors
 		VDBlinn.init(this, {
@@ -230,8 +220,33 @@ class A10 : public BaseProject {
 				});
 // **A10** Place here the initialization for the VertexDescriptor
 		VDnew.init(this, {
+			// this array contains the bindings
+				  // first  element : the binding number
+				  // second element : the stride of this binging
+				  // third  element : whether this parameter change per vertex or per instance
+				  //                  using the corresponding Vulkan constant
 			{0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX}
 		}, {
+			// this array contains the location
+				  // first  element : the binding number
+				  // second element : the location number
+				  // third  element : the offset of this element in the memory record
+				  // fourth element : the data type of the element
+				  //                  using the corresponding Vulkan constant
+				  // fifth  elmenet : the size in byte of the element
+				  // sixth  element : a constant defining the element usage
+				  //                   POSITION - a vec3 with the position
+				  //                   NORMAL   - a vec3 with the normal vector
+				  //                   UV       - a vec2 with a UV coordinate
+				  //                   COLOR    - a vec4 with a RGBA color
+				  //                   TANGENT  - a vec4 with the tangent vector
+				  //                   OTHER    - anything else
+				  //
+				  // ***************** DOUBLE CHECK ********************
+				  //    That the Vertex data structure you use in the "offsetoff" and
+				  //	in the "sizeof" in the previous array, refers to the correct one,
+				  //	if you have more than one vertex format!
+				  // ***************************************************
 			{0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos),
 				sizeof(glm::vec3), POSITION},
 			{0, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, norm),
@@ -245,6 +260,10 @@ class A10 : public BaseProject {
 
 
 		// Pipelines [Shader couples]
+		// The second parameter is the pointer to the vertex definition
+		// Third and fourth parameters are respectively the vertex and fragment shaders
+		// The last array, is a vector of pointer to the layouts of the sets that will
+		// be used in this pipeline. The first element will be set 0, and so on..
 		PBlinn.init(this, &VDBlinn,  "shaders/BlinnVert.spv",    "shaders/BlinnFrag.spv", {&DSLGlobal, &DSLBlinn});
 		PEmission.init(this, &VDEmission,  "shaders/EmissionVert.spv",    "shaders/EmissionFrag.spv", {&DSLEmission});
 		PskyBox.init(this, &VDskyBox, "shaders/SkyBoxVert.spv", "shaders/SkyBoxFrag.spv", {&DSLskyBox});
@@ -256,12 +275,15 @@ class A10 : public BaseProject {
 		Pnew.init(this, &VDnew, "shaders/NormalMapVert.spv", "shaders/NormalMapFrag.spv", {&DSLGlobal, &DSLNew});
 
 		// Create models
+		// The second parameter is the pointer to the vertex definition for this model
+		// The third parameter is the file name
+		// The last is a constant specifying the file type: currently only OBJ or GLTF
 		Mship.init(this, &VDBlinn, "models/X-WING-baker.obj", OBJ);
 		Msun.init(this, &VDEmission, "models/Sphere.obj", OBJ);
 		MskyBox.init(this, &VDskyBox, "models/SkyBoxCube.obj", OBJ);
 // **A10** Place here the loading of the model. It should be contained in file "models/Sphere.gltf", it should use the
 //		Vertex descriptor you defined, and be of GLTF format.
-		
+		MEarth.init(this, &VDnew, "models/Sphere.gltf", GLTF);
 
 		// Create the textures
 		Tship.init(this, "textures/XwingColors.png");
@@ -291,8 +313,8 @@ class A10 : public BaseProject {
 		// WARNING!!!!!!!!
 		// Must be set before initializing the text and the scene
 // **A10** Update the number of elements to correctly size the descriptor sets pool
-		DPSZs.uniformBlocksInPool = 10; //??
-		DPSZs.texturesInPool = 10; 
+		DPSZs.uniformBlocksInPool = 7; //??
+		DPSZs.texturesInPool = 9; 
 		DPSZs.setsInPool = 5;
 
 std::cout << "Initializing text\n";
@@ -375,7 +397,7 @@ std::cout << "Initializing text\n";
 		DSLGlobal.cleanup();
 		DSLskyBox.cleanup();
 // **A10** Add the cleanup for the descriptor set layout
-		DSEarth.cleanup();
+		DSLNew.cleanup();
 
 		// Destroies the pipelines
 		PBlinn.destroy();
@@ -698,6 +720,7 @@ ShowTexture    = 0;
 		parametersUbo.Ang = tTime * TangTurnTimeFact;
 		parametersUbo.ShowCloud = ShowCloud;
 		parametersUbo.ShowTexture = ShowTexture;
+		DSEarth.map(currentImage, &parametersUbo, 6);
 
 	}
 };
