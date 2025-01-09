@@ -1,4 +1,4 @@
-{
+	{
 	"models": [
 		{"id": "ge",   "model": "models/gelatoBus.mgcg", "format":"MGCG"},
 		{"id": "a1",   "model": "models/apt1.mgcg", "format":"MGCG"},

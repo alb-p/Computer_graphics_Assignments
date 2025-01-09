@@ -204,43 +204,47 @@ void MakeCone(float radius, float height, int slices, std::vector<std::array<flo
 //
 // HINT: the procedure below creates a triangle. You have to change it, or you will obtain a wrong result
 // You should use a for loop, and you should start from the procedure to create a circle seen during the lesson
-	 
-	 
-	/* 
-	 //generate bottom circonference (0-32)
-    for(int i = 0; i < slices; i++) {
-        indices[3*i +1   ] = slices;   //prima è 96
-        indices[3*i ] = i;            // ultima 191
-        indices[3*i + 2] = (i+1) % slices; 
-    }
-
-    //generate vertex 65
-    vertices[2*slices+1] = {0.0f,height/2.0f,0.0f};
+	  std::array<float,6> element = {0.0f,-height/2.0f,0.0f,0.0f,-1.0f,0.0f};
     
-    //generate top circonference (33-65)
+    vertices.push_back(element);
+
     for(int i = 0; i < slices; i++) {
-        indices[3*slices + 3*i   ] = 2*slices+1;   //prima è 97 v:65
-        indices[3*slices + 3*i +1] = i+slices +1;            // ultima 287 v:33
-        indices[3*slices + 3*i + 2] = (i+slices+2) % (2*slices+1); 
-    }
-
-	
-	for(int i = 0; i < slices; i++) {
         float ang = 2*M_PI * (float)i / (float)slices;
-        vertices.[i]={radius * sin(ang),-height/2,  radius * cos(ang), 0.0f,0.0f,1.0f};
-
-
-		
-		;
-        vertices[i+slices + 1] = glm::vec3(radius * sin(ang),height/2,  radius * cos(ang));
+        element = {radius * sin(ang),-height/2,radius * cos(ang),0.0f,-1.0f,0.0f};
+        vertices.push_back(element);
+        //vertices[i] = glm::vec3(radius * sin(ang),-height/2,radius * cos(ang));
+        indices.insert(indices.end(),0);
+        indices.insert(indices.end(),(i+2)%(slices+1));
+        indices.insert(indices.end(),(i+1) % (slices+1));
     }
+    indices[indices.size() - 2] = 1;
+    //generate base circle
+    
+    element = {0.0f,height/2.0f,0.0f,0.0f,1.0f,0.0f};
+    
+    vertices.push_back(element);
+    //generate top vertex
+    
+    float halfHeight = height / 2.0f;
+    float angleStep = 2.0f * M_PI / slices;
 
-	*/
-	vertices = {
-				   {-radius,-height/2.0f,0.0f,0.0f,0.0f,1.0f},
-				   { radius,-height/2.0f,0.0f,0.0f,0.0f,1.0f},
-				   { 0.0f,   height/2.0f,0.0f,0.0f,0.0f,1.0f}};
-	indices = {0, 1, 2};
+    // Generate vertices for the sides
+        for (int i = 0; i < slices; ++i) {
+            float angle = i * angleStep;
+            float x = radius * cos(angle);
+            float z = radius * sin(angle);
+            float nx = cos(angle);
+            float ny = radius;
+            float nz = sin(angle);
+            
+            // Side vertices
+            vertices.push_back({x, -halfHeight, z, nx, ny, nz});
+            
+            indices.push_back(slices+1);
+            indices.insert(indices.end(),(slices+1+i+2)% (2*slices+2));
+            indices.insert(indices.end(),(slices+1+i+1)% (2*slices+2));
+        }
+    
 }
 
 void MakeSphere(float radius, int rings, int slices, std::vector<std::array<float,6>> &vertices, std::vector<uint32_t> &indices)
@@ -259,14 +263,39 @@ void MakeSphere(float radius, int rings, int slices, std::vector<std::array<floa
 // HINT: the procedure below creates a circle. You have to change it, or you will obtain a wrong result
 // You should use two nested for loops, one used to span across the rings, and the other that spans along
 // the rings.
-	vertices.resize(slices+1);
-	indices.resize(3*slices);
-	vertices[slices] = {0.0f,0.0f,0.0f,0.0f,0.0f,1.0f};
-	for(int i = 0; i < slices; i++) {
-		float ang = 2*M_PI * (float)i / (float)slices;
-		vertices[i] = {radius * cos(ang), radius * sin(ang), 0.0f,0.0f,0.0f,1.0f};
-		indices[3*i  ] = slices;
-		indices[3*i+1] = i;
-		indices[3*i+2] = (i+1) % slices;
-	}
+    std::array<float,6> element = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
+
+    vertices.push_back(element);
+    int numVerticesPerLatitude = slices + 1;
+
+    for (int x = 0; x <= rings; ++x) {
+            float theta = x * glm::pi<float>() / rings;
+            float sinTheta = sin(theta);
+            float cosTheta = cos(theta);
+
+            for (int lon = 0; lon <= slices; ++lon) {
+                float phi = lon * 2.0f * glm::pi<float>() / slices;
+                float sinPhi = sin(phi);
+                float cosPhi = cos(phi);
+
+                float x = radius * sinTheta * cosPhi;
+                float y = radius * sinTheta * sinPhi;
+                float z = radius * cosTheta;
+                element = {x,y,z,x,y,z};
+                vertices.push_back(element);
+                
+                int current = x * numVerticesPerLatitude + lon + 1; // +1 per considerare l'origine
+                int next = current + numVerticesPerLatitude;
+
+                            // Triangolo 1
+                            indices.push_back(current);
+                            indices.push_back(next);
+                            indices.push_back(current + 1);
+
+                            // Triangolo 2
+                            indices.push_back(next);
+                            indices.push_back(next + 1);
+                            indices.push_back(current + 1);
+            }
+        }
 }
